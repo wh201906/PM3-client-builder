@@ -1,0 +1,84 @@
+name: Build Windows Client
+on: [push, workflow_dispatch]
+
+jobs:
+  load_conf:
+    runs-on: ubuntu-22.04
+    outputs:
+      refs: ${{ steps.load_step.outputs.refs }}
+      standalones: ${{ steps.load_step.outputs.standalones }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - id: load_step
+        name: Load Config
+        run: |
+          python loadConf.py
+          cat $GITHUB_OUTPUT
+
+  build:
+    runs-on: windows-latest
+    needs:
+      - load_conf
+    strategy:
+      fail-fast: false
+      matrix:
+        ref: ${{ fromJSON(needs.load_conf.outputs.refs) }}
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      MSYSTEM: MINGW64
+      PYTHONHOME: /mingw64
+
+    steps:
+      - name: Set Environment
+        run: |
+          $Env:PATH = "C:/ProxSpace/msys2/mingw64/bin;C:/ProxSpace/msys2/usr/local/bin;C:/ProxSpace/msys2/usr/bin;C:/ProxSpace/msys2/bin;"+$Env:PATH
+          echo $Env:PATH
+          echo $Env:PATH >> "$GITHUB_ENV"
+
+      - name: ProxSpace download
+        run: Invoke-WebRequest "https://github.com/Gator96100/ProxSpace/archive/master.zip" -outfile "C:\proxspace.zip" -Passthru
+
+      - name: ProxSpace extract
+        run: Expand-Archive -LiteralPath "C:\proxspace.zip" -DestinationPath "C:\"
+
+      - name: ProxSpace delete zip
+        run: Remove-Item "C:\proxspace.zip"
+
+      - name: ProxSpace rename folder
+        run: Get-ChildItem -Path "C:\ProxSpace-*" | Rename-Item -NewName (Split-Path C:\ProxSpace -Leaf)
+
+      - name: ProxSpace version
+        run: |
+          $psversion = (Select-String -Pattern 'PSVERSION=' -SimpleMatch -Path "C:\ProxSpace\setup\09-proxspace_setup.post").Line.Split("""")[1]
+          Write-Host "ProxSpace version: $psversion"
+
+      - name: ProxSpace initial startup
+        working-directory: C:\ProxSpace
+        run: ./runme64.bat -c "exit"
+
+      - name: Checkout Proxmark3
+        env:
+          MATRIX_REF: ${{ matrix.ref }}
+        working-directory: C:\ProxSpace
+        run: |
+          mkdir -Force ./pm3
+          cd pm3
+          git clone https://github.com/RfidResearchGroup/proxmark3.git --filter=blob:none --no-checkout
+          cd proxmark3
+          git checkout $MATRIX_REF
+          echo $MATRIX_REF
+
+      - name: ProxSpace autobuild
+        working-directory: C:/ProxSpace
+        run: |
+          ./autobuild.bat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            C:/ProxSpace/builds/**/*.7z
