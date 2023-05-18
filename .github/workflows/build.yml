@@ -16,14 +16,8 @@ jobs:
           python loadConf.py
           cat $GITHUB_OUTPUT
 
-  build:
+  prepare_proxspace:
     runs-on: windows-latest
-    needs:
-      - load_conf
-    strategy:
-      fail-fast: false
-      matrix:
-        ref: ${{ fromJSON(needs.load_conf.outputs.refs) }}
     defaults:
       run:
         shell: pwsh
@@ -41,6 +35,17 @@ jobs:
       - name: ProxSpace download
         run: Invoke-WebRequest "https://github.com/Gator96100/ProxSpace/archive/master.zip" -outfile "C:\proxspace.zip" -Passthru
 
+      - name: Cache ProxSpace
+        id: cache-proxspace
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-proxspace
+        with:
+          path: C:/ProxSpace
+          key: proxspace-${{ hashFiles('C:/proxspace.zip') }}-${{ github.run_id }}
+          restore-keys: |
+            proxspace-${{ hashFiles('C:/proxspace.zip') }}-
+
       - name: ProxSpace extract
         run: Expand-Archive -LiteralPath "C:\proxspace.zip" -DestinationPath "C:\"
 
@@ -54,6 +59,36 @@ jobs:
         run: |
           $psversion = (Select-String -Pattern 'PSVERSION=' -SimpleMatch -Path "C:\ProxSpace\setup\09-proxspace_setup.post").Line.Split("""")[1]
           Write-Host "ProxSpace version: $psversion"
+
+      - name: ProxSpace initial startup
+        working-directory: C:\ProxSpace
+        run: ./runme64.bat -c "exit"
+
+  build:
+    runs-on: windows-latest
+    needs: [load_conf, prepare_proxspace]
+    strategy:
+      fail-fast: false
+      matrix:
+        ref: ${{ fromJSON(needs.load_conf.outputs.refs) }}
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      MSYSTEM: MINGW64
+      PYTHONHOME: /mingw64
+
+    steps:
+      - name: Cache ProxSpace
+        id: cache-proxspace
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-proxspace
+        with:
+          path: C:/ProxSpace
+          key: proxspace-${{ hashFiles('C:/proxspace.zip') }}-${{ github.run_id }}
+          restore-keys: |
+            proxspace-${{ hashFiles('C:/proxspace.zip') }}-
 
       - name: ProxSpace initial startup
         working-directory: C:\ProxSpace
@@ -79,5 +114,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
+          name: client_${{ matrix.ref }}
           path: |
             C:/ProxSpace/builds/**/*.7z
