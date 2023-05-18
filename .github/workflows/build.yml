@@ -72,6 +72,11 @@ jobs:
           $psversion = (Select-String -Pattern 'PSVERSION=' -SimpleMatch -Path "C:\ProxSpace\setup\09-proxspace_setup.post").Line.Split("""")[1]
           Write-Host "ProxSpace version: $psversion"
 
+      - name: ProxSpace simplify
+        if: ${{ !contains(steps.check-cache.outcome, 'success') }}
+        run: |
+          ((Get-Content -path "C:\ProxSpace\setup\packages.txt" -Raw) -replace 'mingw-w64-x86_64-qt5','mingw-w64-x86_64-qt5-base') | Set-Content -Path "C:\ProxSpace\setup\packages.txt"
+
       - name: ProxSpace initial startup
         if: ${{ !contains(steps.check-cache.outcome, 'success') }}
         working-directory: C:\ProxSpace
