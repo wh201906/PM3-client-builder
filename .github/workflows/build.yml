@@ -89,12 +89,12 @@ jobs:
       fail-fast: false
       matrix:
         ref: ${{ fromJSON(needs.load_conf.outputs.refs) }}
+        platform: [PM3RDV4, PM3GENERIC, RDV4BTADDON, GENERICWITHFLASH]
     defaults:
       run:
         shell: pwsh
     env:
       MSYSTEM: MINGW64
-      PYTHONHOME: /mingw64
 
     steps:
       - name: Set Environment
@@ -125,6 +125,8 @@ jobs:
 
       - name: ProxSpace initial startup
         working-directory: C:\ProxSpace
+        env:
+          PYTHONHOME: /mingw64
         run: ./runme64.bat -c "exit"
 
       - name: Checkout Proxmark3
@@ -139,8 +141,19 @@ jobs:
           git checkout ${{ env.MATRIX_REF }}
           echo ${{ env.MATRIX_REF }}
 
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create Makefile.platform
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+        run: |
+          python makefile.py
+
       - name: ProxSpace autobuild
         working-directory: C:/ProxSpace
+        env:
+          PYTHONHOME: /mingw64
         run: |
           ./autobuild.bat
 
