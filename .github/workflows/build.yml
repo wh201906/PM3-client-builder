@@ -35,6 +35,9 @@ jobs:
       - name: ProxSpace download
         run: Invoke-WebRequest "https://github.com/Gator96100/ProxSpace/archive/master.zip" -outfile "C:\proxspace.zip" -Passthru
 
+      - name: ProxSpace Copy
+        run: copy "C:\proxspace.zip" ./
+
       - name: Cache ProxSpace
         id: cache-proxspace
         uses: actions/cache@v3
@@ -42,15 +45,17 @@ jobs:
           cache-name: cache-proxspace
         with:
           path: C:/ProxSpace
-          key: proxspace-${{ hashFiles('C:/proxspace.zip') }}-${{ github.run_id }}
+          key: proxspace-${{ hashFiles('./proxspace.zip') }}-${{ github.run_id }}
           restore-keys: |
-            proxspace-${{ hashFiles('C:/proxspace.zip') }}-
+            proxspace-${{ hashFiles('./proxspace.zip') }}-
 
       - name: ProxSpace extract
         run: Expand-Archive -LiteralPath "C:\proxspace.zip" -DestinationPath "C:\"
 
       - name: ProxSpace delete zip
-        run: Remove-Item "C:\proxspace.zip"
+        run: |
+          Remove-Item "C:\proxspace.zip"
+          Remove-Item "./proxspace.zip"
 
       - name: ProxSpace rename folder
         run: Get-ChildItem -Path "C:\ProxSpace-*" | Rename-Item -NewName (Split-Path C:\ProxSpace -Leaf)
@@ -79,6 +84,18 @@ jobs:
       PYTHONHOME: /mingw64
 
     steps:
+      - name: Set Environment
+        run: |
+          $Env:PATH = "C:/ProxSpace/msys2/mingw64/bin;C:/ProxSpace/msys2/usr/local/bin;C:/ProxSpace/msys2/usr/bin;C:/ProxSpace/msys2/bin;"+$Env:PATH
+          echo $Env:PATH
+          echo $Env:PATH >> "$GITHUB_ENV"
+
+      - name: ProxSpace download
+        run: Invoke-WebRequest "https://github.com/Gator96100/ProxSpace/archive/master.zip" -outfile "C:\proxspace.zip" -Passthru
+
+      - name: ProxSpace Copy
+        run: copy "C:\proxspace.zip" ./
+
       - name: Cache ProxSpace
         id: cache-proxspace
         uses: actions/cache@v3
@@ -86,9 +103,14 @@ jobs:
           cache-name: cache-proxspace
         with:
           path: C:/ProxSpace
-          key: proxspace-${{ hashFiles('C:/proxspace.zip') }}-${{ github.run_id }}
+          key: proxspace-${{ hashFiles('./proxspace.zip') }}-${{ github.run_id }}
           restore-keys: |
-            proxspace-${{ hashFiles('C:/proxspace.zip') }}-
+            proxspace-${{ hashFiles('./proxspace.zip') }}-
+
+      - name: ProxSpace delete zip
+        run: |
+          Remove-Item "C:\proxspace.zip"
+          Remove-Item "./proxspace.zip"
 
       - name: ProxSpace initial startup
         working-directory: C:\ProxSpace
