@@ -45,11 +45,17 @@ jobs:
           cache-name: cache-proxspace
         with:
           path: C:/ProxSpace
-          key: proxspace-${{ hashFiles('./proxspace.zip') }}-${{ github.run_id }}
-          restore-keys: |
-            proxspace-${{ hashFiles('./proxspace.zip') }}-
+          key: proxspace-${{ hashFiles('./proxspace.zip') }}
+
+      # don't use cache-hit
+      # in case of partial key match
+      - name: Check Cache
+        id: check-cache
+        continue-on-error: true
+        run: cd C:/ProxSpace
 
       - name: ProxSpace extract
+        if: ${{ !contains(steps.check-cache.outcome, 'success') }}
         run: Expand-Archive -LiteralPath "C:\proxspace.zip" -DestinationPath "C:\"
 
       - name: ProxSpace delete zip
@@ -58,6 +64,7 @@ jobs:
           Remove-Item "./proxspace.zip"
 
       - name: ProxSpace rename folder
+        if: ${{ !contains(steps.check-cache.outcome, 'success') }}
         run: Get-ChildItem -Path "C:\ProxSpace-*" | Rename-Item -NewName (Split-Path C:\ProxSpace -Leaf)
 
       - name: ProxSpace version
@@ -66,6 +73,7 @@ jobs:
           Write-Host "ProxSpace version: $psversion"
 
       - name: ProxSpace initial startup
+        if: ${{ !contains(steps.check-cache.outcome, 'success') }}
         working-directory: C:\ProxSpace
         run: ./runme64.bat -c "exit"
 
@@ -103,9 +111,7 @@ jobs:
           cache-name: cache-proxspace
         with:
           path: C:/ProxSpace
-          key: proxspace-${{ hashFiles('./proxspace.zip') }}-${{ github.run_id }}
-          restore-keys: |
-            proxspace-${{ hashFiles('./proxspace.zip') }}-
+          key: proxspace-${{ hashFiles('./proxspace.zip') }}
 
       - name: ProxSpace delete zip
         run: |
