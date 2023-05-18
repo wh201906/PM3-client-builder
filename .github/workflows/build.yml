@@ -6,6 +6,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       refs: ${{ steps.load_step.outputs.refs }}
+      platforms: ${{ steps.load_step.outputs.platforms }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -72,6 +73,8 @@ jobs:
           $psversion = (Select-String -Pattern 'PSVERSION=' -SimpleMatch -Path "C:\ProxSpace\setup\09-proxspace_setup.post").Line.Split("""")[1]
           Write-Host "ProxSpace version: $psversion"
 
+      # no need to install qt5 group
+      # qt5-base is enough
       - name: ProxSpace simplify
         if: ${{ !contains(steps.check-cache.outcome, 'success') }}
         run: |
@@ -89,7 +92,7 @@ jobs:
       fail-fast: false
       matrix:
         ref: ${{ fromJSON(needs.load_conf.outputs.refs) }}
-        platform: [PM3RDV4, PM3GENERIC, RDV4BTADDON, GENERICWITHFLASH]
+        platform: ${{ fromJSON(needs.load_conf.outputs.platforms) }}
     defaults:
       run:
         shell: pwsh
@@ -141,7 +144,7 @@ jobs:
           git checkout ${{ env.MATRIX_REF }}
           echo ${{ env.MATRIX_REF }}
 
-      - name: Checkout
+      - name: Checkout builder
         uses: actions/checkout@v3
 
       - name: Create Makefile.platform
@@ -160,6 +163,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: client_${{ matrix.ref }}
+          name: client_${{ matrix.ref }}_${{ matrix.platform }}
           path: |
             C:/ProxSpace/builds/**/*.7z

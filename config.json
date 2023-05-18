@@ -3,5 +3,12 @@
         "master",
         "v4.16191",
         "v4.15864"
+    ],
+    "//": "available platform name: PM3RDV4, PM3GENERIC, RDV4BTADDON, GENERICWITHFLASH",
+    "platforms": [
+        "PM3RDV4",
+        "PM3GENERIC",
+        "RDV4BTADDON",
+        "GENERICWITHFLASH"
     ]
 }
