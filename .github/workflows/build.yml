@@ -6,7 +6,6 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       refs: ${{ steps.load_step.outputs.refs }}
-      standalones: ${{ steps.load_step.outputs.standalones }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -69,8 +68,8 @@ jobs:
           cd pm3
           git clone https://github.com/RfidResearchGroup/proxmark3.git --filter=blob:none --no-checkout
           cd proxmark3
-          git checkout $MATRIX_REF
-          echo $MATRIX_REF
+          git checkout ${{ env.MATRIX_REF }}
+          echo ${{ env.MATRIX_REF }}
 
       - name: ProxSpace autobuild
         working-directory: C:/ProxSpace
