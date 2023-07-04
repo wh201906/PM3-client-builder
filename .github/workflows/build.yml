@@ -139,7 +139,7 @@ jobs:
         run: |
           mkdir -Force ./pm3
           cd pm3
-          git clone https://github.com/wh201906/proxmark3-rrg.git --filter=blob:none --no-checkout
+          git clone https://github.com/wh201906/proxmark3-rrg.git --filter=blob:none --no-checkout proxmark3
           cd proxmark3
           git checkout ${{ env.MATRIX_REF }}
           echo ${{ env.MATRIX_REF }}
